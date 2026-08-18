@@ -3,15 +3,11 @@ kind: Service
 metadata:
   name: postgres-rag-ollama
   namespace: rag-app
-
 spec:
-  type: NodePort
-
+  type: ClusterIP
   selector:
     app: postgres-rag-ollama
-
   ports:
     - port: 8000
       targetPort: 8000
-      nodePort: 30861
       protocol: TCP
