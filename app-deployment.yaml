@@ -20,7 +20,7 @@ spec:
       containers:
         - name: app
 
-          image: docker.io/muskanpatel71198/postgres-rag-ollama:29
+          image: docker.io/muskanpatel71198/postgres-rag-ollama:32
 
           ports:
             - containerPort: 8000
