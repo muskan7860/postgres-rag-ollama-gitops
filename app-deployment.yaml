@@ -27,7 +27,7 @@ spec:
 
         - name: backend
 
-          image: docker.io/muskanpatel71198/postgres-rag-ollama:32
+          image: docker.io/muskanpatel71198/postgres-rag-ollama:41
 
           command:
             - uvicorn
@@ -150,7 +150,7 @@ spec:
 
         - name: frontend
 
-          image: docker.io/muskanpatel71198/postgres-rag-ollama:25
+          image: docker.io/muskanpatel71198/postgres-rag-ollama:41
 
           command:
             - streamlit
