@@ -1,14 +1,24 @@
-COPY app ./app
-COPY frontend.py .
-COPY documents ./documents
-COPY postgres ./postgres
+apiVersion: v1
+kind: Service
 
-RUN useradd --create-home --shell /bin/bash appuser \
-    && chown -R appuser:appuser /app
+metadata:
+  name: postgres-rag-ollama
+  namespace: rag-app
 
-USER appuser
+spec:
+  type: ClusterIP
 
-EXPOSE 8000
-EXPOSE 8501
+  selector:
+    app: postgres-rag-ollama
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+  ports:
+
+    - name: frontend
+      port: 8501
+      targetPort: 8501
+      protocol: TCP
+
+    - name: backend
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
