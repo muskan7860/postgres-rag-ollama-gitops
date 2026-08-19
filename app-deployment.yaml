@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: postgres-rag-ollama
   namespace: rag-app
@@ -17,20 +18,44 @@ spec:
         app: postgres-rag-ollama
 
     spec:
+
       containers:
-        - name: app
+
+        # ======================================================
+        # FASTAPI BACKEND
+        # ======================================================
+
+        - name: backend
 
           image: docker.io/muskanpatel71198/postgres-rag-ollama:32
 
+          command:
+            - uvicorn
+
+          args:
+            - app.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+
           ports:
-            - containerPort: 8000
+            - name: backend
+              containerPort: 8000
+              protocol: TCP
 
           env:
+
             - name: APP_ENV
               value: "production"
 
             - name: APP_PORT
               value: "8000"
+
+
+            # ------------------------------------------
+            # POSTGRESQL
+            # ------------------------------------------
 
             - name: POSTGRES_HOST
               value: "postgres-rag-db"
@@ -56,22 +81,145 @@ spec:
                   name: postgres-rag-secret
                   key: POSTGRES_PASSWORD
 
+
+            # ------------------------------------------
+            # OLLAMA
+            # ------------------------------------------
+
             - name: OLLAMA_HOST
               value: "http://ollama:11434"
 
             - name: OLLAMA_MODEL
               value: "llama3.2:3b"
 
+
+          # ------------------------------------------
+          # BACKEND READINESS PROBE
+          # ------------------------------------------
+
           readinessProbe:
+
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 10
+
+            initialDelaySeconds: 20
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+
+          # ------------------------------------------
+          # BACKEND LIVENESS PROBE
+          # ------------------------------------------
 
           livenessProbe:
+
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 30
+
+            initialDelaySeconds: 40
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+
+          # ------------------------------------------
+          # BACKEND RESOURCES
+          # ------------------------------------------
+
+          resources:
+
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+
+
+        # ======================================================
+        # STREAMLIT FRONTEND
+        # ======================================================
+
+        - name: frontend
+
+          image: docker.io/muskanpatel71198/postgres-rag-ollama:25
+
+          command:
+            - streamlit
+
+          args:
+            - run
+            - frontend.py
+            - --server.address=0.0.0.0
+            - --server.port=8501
+            - --server.headless=true
+
+          ports:
+            - name: frontend
+              containerPort: 8501
+              protocol: TCP
+
+
+          env:
+
+            # ------------------------------------------
+            # FASTAPI BACKEND
+            #
+            # Both containers run in the SAME pod,
+            # therefore localhost:8000 works.
+            # ------------------------------------------
+
+            - name: BACKEND_URL
+              value: "http://localhost:8000"
+
+
+          # ------------------------------------------
+          # FRONTEND READINESS PROBE
+          # ------------------------------------------
+
+          readinessProbe:
+
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+
+          # ------------------------------------------
+          # FRONTEND LIVENESS PROBE
+          # ------------------------------------------
+
+          livenessProbe:
+
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+
+          # ------------------------------------------
+          # FRONTEND RESOURCES
+          # ------------------------------------------
+
+          resources:
+
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
