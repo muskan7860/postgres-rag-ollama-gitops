@@ -92,6 +92,9 @@ spec:
             - name: OLLAMA_MODEL
               value: "llama3.2:3b"
 
+            - name: OLLAMA_EMBEDDING_MODEL
+              value: "all-minilm"
+
 
           # ------------------------------------------
           # BACKEND READINESS PROBE
